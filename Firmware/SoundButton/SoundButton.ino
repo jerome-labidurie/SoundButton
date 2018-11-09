@@ -4,6 +4,7 @@
 
 #include <SoftwareSerial.h>
 #include <DFMiniMp3.h>
+#include <SerialCommands.h>
 
 // implement a notification class,
 // its member methods will get called 
@@ -52,6 +53,42 @@ unsigned long curRead = 0; ///< currentr button read time
  */
 #define NB_BTN 2
 
+char serial_command_buffer_[32];
+SerialCommands serial_commands_(&Serial, serial_command_buffer_, sizeof(serial_command_buffer_), "\n", " ");
+
+//This is the default handler, and gets called when no other command matches. 
+void cmd_unrecognized(SerialCommands* sender, const char* cmd)
+{
+  sender->GetSerial()->print("Unrecognized command [");
+  sender->GetSerial()->print(cmd);
+  sender->GetSerial()->println("]");
+  sender->GetSerial()->println("+/- : volume");
+  sender->GetSerial()->println("p N : play track N");
+}
+
+void cmd_vol(SerialCommands* sender, const char* cmd) {
+  uint16_t volume = mp3.getVolume();
+  if (*cmd == '+') {
+    volume++;
+  } else {
+    volume--;
+  }
+  mp3.setVolume(volume);
+  Serial.println(volume);
+}
+
+void cmd_play(SerialCommands* sender) {
+  char* track = sender->Next();
+  if (track == NULL) {
+    Serial.println ("ERR: No track");
+    return;
+  }
+  play = *track - '0';
+}
+SerialCommand cmd_vol_up("+", cmd_vol);
+SerialCommand cmd_vol_dn("-", cmd_vol);
+SerialCommand cmd_play_track("p", cmd_play);
+
 void setup() 
 {
   
@@ -62,6 +99,11 @@ void setup()
   for (uint8_t i = 2; i <= NB_BTN+1; i++) {
     pinMode(i, INPUT_PULLUP);
   }
+
+  serial_commands_.SetDefaultHandler(cmd_unrecognized);
+  serial_commands_.AddCommand(&cmd_vol_up);
+  serial_commands_.AddCommand(&cmd_vol_dn);
+  serial_commands_.AddCommand(&cmd_play_track);
  
   mp3.begin();
   mp3.reset(); 
@@ -115,6 +157,8 @@ void loop()
     play = 0;
   }
   waitMilliseconds(50);
+  serial_commands_.ReadSerial();
+  
   //Serial.print(play);
   //Serial.println (current);
 }
