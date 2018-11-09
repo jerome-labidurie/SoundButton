@@ -51,7 +51,7 @@ unsigned long curRead = 0; ///< currentr button read time
 /** number of buttons, must be equal or less than nb of tracks
  *  plug them to pins 2..NB_BTN+1
  */
-#define NB_BTN 2
+#define NB_BTN 3
 
 char serial_command_buffer_[32];
 SerialCommands serial_commands_(&Serial, serial_command_buffer_, sizeof(serial_command_buffer_), "\n", " ");
@@ -143,20 +143,20 @@ void waitMilliseconds(uint16_t msWait)
 void loop() 
 {
   curRead = millis();
-  if (curRead - lastRead > 200) {
     for (uint8_t i = 2; i<=NB_BTN+1; i++) {
       if (digitalRead(i) == LOW) {
+        if (curRead - lastRead > 200) {
         play = i-1;
+        lastRead = curRead;
         break;
       }
     }
-    lastRead = curRead;
   }
   if (play > 0) {
     mp3.playGlobalTrack (play);
     play = 0;
   }
-  waitMilliseconds(50);
+  waitMilliseconds(40);
   serial_commands_.ReadSerial();
   
   //Serial.print(play);
