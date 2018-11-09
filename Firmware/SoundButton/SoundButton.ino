@@ -1,7 +1,6 @@
-// this example will play a random track from all on the sd 
-//
-// it expects the sd card to contain some mp3 files
-
+/** SoundButton
+ *  https://github.com/jerome-labidurie/SoundButton
+ */
 #include <SoftwareSerial.h>
 #include <DFMiniMp3.h>
 #include <SerialCommands.h>
