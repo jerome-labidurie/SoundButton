@@ -43,7 +43,7 @@ SoftwareSerial secondarySerial(10, 11); // RX, TX
 DFMiniMp3<SoftwareSerial, Mp3Notify> mp3(secondarySerial);
 
 uint16_t count = 0; ///< number of mp3 tracks
-uint16_t play = 0; ///< track to play
+uint16_t play = 0; ///< track to play (bitmap)
 unsigned long lastRead = 0; ///< last button read time
 unsigned long curRead = 0; ///< currentr button read time
 
@@ -142,17 +142,17 @@ void waitMilliseconds(uint16_t msWait)
 void loop() 
 {
   curRead = millis();
+  if (curRead - lastRead > 200) {
     for (uint8_t i = 2; i<=NB_BTN+1; i++) {
       if (digitalRead(i) == LOW) {
-        if (curRead - lastRead > 200) {
-        play = i-1;
-        lastRead = curRead;
-        break;
+          play |= 1 << (i-2);
+          lastRead = curRead;
       }
     }
   }
   if (play > 0) {
     mp3.playGlobalTrack (play);
+    Serial.println(play);
     play = 0;
   }
   waitMilliseconds(40);
